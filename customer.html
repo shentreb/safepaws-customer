@@ -1,0 +1,118 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafePaws Customer</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00a58b">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+:root{--green:#00a58b;--yellow:#f59e0b}
+body{font-family:Inter,system-ui,sans-serif;padding:16px;background:#f4f7f9;margin:0;max-width:600px;margin:auto}
+.card{background:#fff;padding:14px;border-radius:12px;margin:12px 0;box-shadow:0 2px 8px #0001}
+.notif{background:#fef3c7;border:2px solid var(--yellow)}
+input,button,select{width:100%;box-sizing:border-box;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #ddd;font-size:16px}
+button{background:var(--green);color:#fff;border:0;font-weight:700;cursor:pointer}
+button.ghost{background:#e5e7eb;color:#111}
+.pass-wrap{position:relative}
+.pass-wrap button{position:absolute;right:6px;top:6px;width:auto;padding:6px 10px;font-size:14px}
+#msg{font-weight:700;margin:8px 0;text-align:center;padding:10px;border-radius:8px;font-size:14px;white-space:pre-wrap}
+#msg.error{background:#fee2e2;color:#b91c1c}
+#msg.ok{background:#d1fae5;color:#065f46}
+#msg.loading{background:#dbeafe;color:#1e40af}
+h2{margin:0 0 12px 0;text-align:center}
+.badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;background:#e5e7eb}
+.badge.pay{background:var(--yellow);color:#78350f}
+</style>
+</head><body>
+<h2>👤 SafePaws Customer</h2>
+<div id="auth" class="card">
+  <input id="email" type="email" placeholder="Email">
+  <div class="pass-wrap"><input id="pass" type="password" placeholder="Password min 6 chars"><button id="showPass" type="button">👁️</button></div>
+  <button id="btnLogin">Login</button><button id="btnSignup" class="ghost">Sign Up</button><button id="btnForgot" class="ghost" style="font-size:14px">Forgot Password?</button>
+</div>
+<div id="app" style="display:none">
+  <button id="logout" class="ghost">Logout</button>
+  <div class="card">
+    <h3>Book a Ride</h3>
+    <input id="petName" placeholder="Pet Name">
+    <input id="petType" placeholder="Dog/Cat">
+    <input id="petWeight" type="number" placeholder="Weight kg">
+    <input id="medicalNotes" placeholder="Medical Notes Optional">
+    <input id="pickupAddress" placeholder="Home Address">
+    <input id="clinicAddress" placeholder="Clinic Address">
+    <select id="tripType"><option value="to_clinic">Home -> Clinic</option><option value="from_clinic">Clinic -> Home</option></select>
+    <select id="paymentMethod"><option value="Cash">Cash to Driver</option><option value="GCash">GCash to Clinic</option></select>
+    <input id="price" type="number" placeholder="Price e.g. 350">
+    <label><input type="checkbox" id="isEmergency"> 🚨 Emergency +100</label>
+    <button id="btnBook">Book Now</button>
+  </div>
+  <h3>My Bookings</h3>
+  <div id="bookings">Loading...</div>
+</div>
+<div id="msg"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+
+const firebaseConfig = { apiKey: "PASTE_MO_API_KEY_MO_DITO", authDomain: "safepaws-app.firebaseapp.com", projectId: "safepaws-app", storageBucket: "safepaws-app.appspot.com", messagingSenderId: "123456789", appId: "1:123456789:web:abc123" };
+const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+const setMsg=(t,y='loading')=>{msg.className=y;msg.innerText=t};
+showPass.onclick=()=>{pass.type=pass.type==='password'?'text':'password';showPass.innerText=pass.type==='password'?'👁️':'🙈'};
+btnLogin.onclick=()=>{if(!email.value||pass.value.length<6)return setMsg('ERROR: Email + 6+ pass','error');setMsg('Logging in...','loading');signInWithEmailAndPassword(auth,email.value,pass.value).catch(e=>setMsg('LOGIN FAILED:\n'+e.code,'error'))};
+btnSignup.onclick=()=>{if(!email.value||pass.value.length<6)return setMsg('ERROR: Email + 6+ pass','error');setMsg('Creating...','loading');createUserWithEmailAndPassword(auth,email.value,pass.value).catch(e=>setMsg('SIGNUP FAILED:\n'+e.code,'error'))};
+btnForgot.onclick=()=>{if(!email.value)return setMsg('ERROR: Type email first','error');setMsg('Sending...','loading');sendPasswordResetEmail(auth,email.value).then(()=>setMsg('Reset sent!','ok')).catch(e=>setMsg('ERROR:\n'+e.code,'error'))};
+logout.onclick=()=>signOut(auth);
+
+btnBook.onclick=async()=>{
+  if(!auth.currentUser)return;
+  const basePrice=Number(price.value)||0;const total=basePrice+(isEmergency.checked?100:0);
+  if(!petName.value||!pickupAddress.value||!clinicAddress.value)return setMsg('ERROR: Fill all fields','error');
+  setMsg('Booking...','loading');
+  await addDoc(collection(db,'bookings'),{
+    userId:auth.currentUser.uid, petName:petName.value, petType:petType.value, petWeight:petWeight.value, medicalNotes:medicalNotes.value,
+    pickupAddress:pickupAddress.value, clinicAddress:clinicAddress.value, tripType:tripType.value, paymentMethod:paymentMethod.value, 
+    price:total, isEmergency:isEmergency.checked, status:'Pending',
+    pickupLat:14.6,pickupLng:120.9,clinicLat:14.65,clinicLng:120.95, // sample coords Bauan area
+    createdAt:serverTimestamp()
+  });
+  setMsg('Booked! Waiting for driver...','ok');
+  petName.value=petType.value=petWeight.value=medicalNotes.value=pickupAddress.value=clinicAddress.value=price.value='';
+  isEmergency.checked=false;
+};
+
+onAuthStateChanged(auth,u=>{
+  if(u){auth.style.display='none';app.style.display='block';loadBookings(u.uid)}
+  else{auth.style.display='block';app.style.display='none';bookings.innerHTML=''}
+});
+
+function loadBookings(uid){
+  setMsg('Loading your bookings...','loading');
+  onSnapshot(query(collection(db,'bookings'),where('userId','==',uid)),snap=>{
+    if(snap.empty)return bookings.innerHTML='<p style="text-align:center;color:#666">No bookings yet.</p>';
+    bookings.innerHTML='';
+    snap.forEach(d=>{
+      const b=d.data();
+      const needPay=b.status==='To Pay';
+      const isTo=b.tripType!=='from_clinic';
+      bookings.innerHTML+=`<div class="card ${needPay?'notif':''}">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h4 style="margin:0">${b.petName} ${b.isEmergency?'🚨':''}</h4>
+          <span class="badge ${needPay?'pay':''}">${b.status} ${needPay?'🔔 PAY NOW':''}</span>
+        </div>
+        <b>Price:</b> ₱${b.price} via ${b.paymentMethod}<br>
+        <b>From:</b> ${isTo?b.pickupAddress:b.clinicAddress}<br><b>To:</b> ${isTo?b.clinicAddress:b.pickupAddress}<br>
+        <div id="cm-${d.id}" style="height:180px;border-radius:8px;margin-top:8px;background:#eee"></div>
+        ${b.status==='Paid'?'<b style="color:var(--green)">✅ Paid</b>':''}
+      </div>`;
+      setTimeout(()=>mapIt(`cm-${d.id}`,isTo?b.pickupLat:b.clinicLat,isTo?b.pickupLng:b.clinicLng,isTo?b.clinicLat:b.pickupLat,isTo?b.clinicLng:b.pickupLng,isTo),200);
+    });
+    setMsg('Live updates on ✓','ok');
+  });
+}
+function mapIt(id,a,b,c,d,isTo){if(!a)return;try{const m=L.map(id).setView([a,b],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);L.marker([a,b]).addTo(m).bindPopup(isTo?'Pickup':'Clinic');L.marker([c,d]).addTo(m).bindPopup(isTo?'Clinic':'Drop');L.polyline([[a,b],[c,d]],{color:'#00a58b',weight:4}).addTo(m)}catch(e){document.getElementById(id).innerHTML='<p>Map error</p>'}}
+</script>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js')</script>
+</body></html>
