@@ -25,14 +25,12 @@
   const $ = id => document.getElementById(id);
   let marker = null;
 
-  // Auth state
   onAuthStateChanged(auth, user => {
     $('authBox').style.display = user ? 'none' : 'block';
     $('dashBox').style.display = user ? 'block' : 'none';
     if(user) $('userEmail').textContent = user.email;
   });
 
-  // Auth buttons
   $('signupBtn').onclick = async () => {
     try { await createUserWithEmailAndPassword(auth, $('email').value, $('password').value); }
     catch(e) { alert(e.message); }
@@ -43,7 +41,6 @@
   };
   $('logoutBtn').onclick = () => signOut(auth);
 
-  // Auto Age Calculator
   window.calcAge = (input) => {
     const birthdate = new Date(input.value);
     const today = new Date();
@@ -53,36 +50,29 @@
     input.closest('.pet-card').querySelector('.petAge').value = age >= 0 ? age : '';
   }
 
-  // Add Pet Card
   $('addPetBtn').onclick = () => {
     const petHTML = `
       <div class="pet-card">
         <button type="button" class="remove-pet">X</button>
         <label>Pet Name</label>
         <input class="petName" placeholder="e.g. Bruno" required>
-        
         <label>Pet Type</label>
         <select class="petType" required>
           <option>Dog</option><option>Cat</option><option>Rabbit</option>
           <option>Bird</option><option>Other</option>
         </select>
-
         <label>Birthdate</label>
         <input type="date" class="petBday" onchange="calcAge(this)" required>
-        
         <label>Age</label>
         <input class="petAge" placeholder="Auto" readonly>
-
         <label>Weight (kg)</label>
         <input type="number" class="petWeight" placeholder="e.g. 12.5" step="0.1">
-        
         <label>Medical Notes</label>
         <textarea class="petMedical" placeholder="Allergies, meds, etc."></textarea>
       </div>`;
     $('petsContainer').insertAdjacentHTML('beforeend', petHTML);
   }
   
-  // Remove Pet Card
   $('petsContainer').addEventListener('click', e => {
     if(e.target.classList.contains('remove-pet')){
       if(document.querySelectorAll('.pet-card').length > 1){
@@ -93,8 +83,7 @@
     }
   });
 
-  // Map Init
-  const map = L.map('map').setView([13.7565, 121.0583], 12); // Batangas
+  const map = L.map('map').setView([13.7565, 121.0583], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'OSM'}).addTo(map);
   map.on('click', e => {
     if (marker) map.removeLayer(marker);
@@ -108,7 +97,6 @@
     $('lat').value = ''; $('lng').value = '';
   };
 
-  // Booking Submit
   $('bookBtn').onclick = async () => {
     const user = auth.currentUser;
     if(!user) return alert('Login first');
@@ -141,13 +129,12 @@
       });
       alert('Booking sent! Waiting for admin approval.');
       $('bookingForm').reset();
-      $('petsContainer').innerHTML = ''; // Clear pets
-      if (marker) map.removeLayer(marker); marker = null; // Clear map
-      $('addPetBtn').click(); // Add 1 pet back
+      $('petsContainer').innerHTML = '';
+      if (marker) map.removeLayer(marker); marker = null;
+      $('addPetBtn').click();
     } catch(e) { alert(e.message); }
   };
 
-  // Add 1 pet on load
   window.onload = () => $('addPetBtn').click();
 </script>
 <style>
@@ -208,6 +195,7 @@
     <label>Notes for Driver</label>
     <textarea id="notes" placeholder="e.g. Nervous pet, bring leash"></textarea>
 
+    <!-- ETO YUNG KULANG KANINA BOI -->
     <h3>Payment</h3>
     <label>Payment Method</label>
     <select id="paymentMethod" required>
@@ -219,6 +207,7 @@
 
     <label>Estimated Fare ₱</label>
     <input id="fare" type="number" placeholder="e.g. 250" step="0.01">
+    <!-- HANGGANG DITO LANG DAGDAG -->
 
     <h3>Pick-up Location</h3>
     <div id="map"></div>
