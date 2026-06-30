@@ -57,7 +57,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, on
 import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 
-const firebaseConfig = { apiKey: "AIzaSyBVaqhNCrgDlWGEVjXygszJUdQR_bpG7os", authDomain: "safepaws-app.firebaseapp.com", projectId: "safepaws-app", storageBucket: "safepaws-app.appspot.com", messagingSenderId: "123456789", appId: "1:123456789:web:abc123" };
+const firebaseConfig = { apiKey: "AIzaSyBVaqhNCrgDlWGEVjXygszJUdQR_bpG7os", authDomain: "safepaws-batangas.firebaseapp.com", projectId: "safepaws-batangas", storageBucket: "safepaws-batangas.firebasestorage.app", messagingSenderId: "629904615191", appId: "1:629904615191:web:45f7148d65ba61a867f952" };
 const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 const setMsg=(t,y='loading')=>{msg.className=y;msg.innerText=t};
 showPass.onclick=()=>{pass.type=pass.type==='password'?'text':'password';showPass.innerText=pass.type==='password'?'👁️':'🙈'};
