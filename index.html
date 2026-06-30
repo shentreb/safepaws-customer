@@ -18,12 +18,16 @@
   .pet-card{border:1px dashed #ccc;padding:12px;border-radius:12px;margin-top:12px;position:relative;background:#fafafa}
   .remove-pet{position:absolute;top:8px;right:8px;width:auto;padding:4px 8px;font-size:12px;background:#ef4444}
   h3{margin:16px 0 8px 0}
+  .toggle{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .toggle input{width:auto}
+  .note{font-size:12px;color:#666;margin-top:4px}
 </style>
 </head>
 <body>
 
+<!-- 1. AUTH BOX -->
 <div id="authBox" class="card">
-  <h2>SafePaws Login</h2>
+  <h2>SafePaws Login 🐾</h2>
   <input id="email" type="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
   <div class="row">
@@ -32,16 +36,17 @@
   </div>
 </div>
 
+<!-- 2. DASHBOARD / BOOKING FORM -->
 <div id="dashBox" class="card" style="display:none">
   <h2>Book a Ride 🐾</h2>
   <p>Logged in as: <b id="userEmail"></b> <button id="logoutBtn" class="secondary" style="width:auto;float:right;padding:6px 10px">Logout</button></p>
 
   <form id="bookingForm">
-    <h3>Pets</h3>
+    <h3>1. Pets</h3>
     <div id="petsContainer"></div>
     <button type="button" id="addPetBtn" class="secondary">+ Add Another Pet</button>
 
-    <h3>Service Details</h3>
+    <h3>2. Service Details</h3>
     <label>Clinic Location</label>
     <select id="clinic" required>
       <option value="">Select Clinic</option>
@@ -60,10 +65,30 @@
       <option>Emergency</option>
     </select>
 
-    <label>Notes for Driver</label>
-    <textarea id="notes" placeholder="e.g. Nervous pet, bring leash"></textarea>
+    <div class="toggle">
+      <input type="checkbox" id="returnTrip">
+      <label for="returnTrip">Return Trip? Hatid + Sundo = x2 Fare</label>
+    </div>
+    
+    <label>Service Mode</label>
+    <select id="serviceMode">
+      <option value="premium">Premium - ₱150/hr, Rider waits only for you</option>
+      <option value="budget">Budget - ₱50/hr, Rider can take other bookings</option>
+    </select>
+    <div class="note">*Budget mode = mas mura pero baka ma-delay sundo</div>
 
-    <h3>Payment</h3>
+    <label>Estimated Waiting Time</label>
+    <select id="waitTime">
+      <option value="0">No Waiting - Drop only</option>
+      <option value="1">1 Hour</option>
+      <option value="2">2 Hours</option>
+      <option value="3">3 Hours</option>
+    </select>
+
+    <label>Notes for Driver</label>
+    <textarea id="notes" placeholder="e.g. Nervous pet, bring leash, gate code"></textarea>
+
+    <h3>3. Payment</h3>
     <label>Payment Method</label>
     <select id="paymentMethod" required>
       <option value="">Select Payment</option>
@@ -72,10 +97,11 @@
       <option>PayMaya</option>
     </select>
 
-    <label>Estimated Fare ₱</label>
-    <input id="fare" type="number" placeholder="e.g. 250" step="0.01">
+    <label>Estimated Fare for Rider Only ₱</label>
+    <input id="fare" type="number" placeholder="Auto compute" step="0.01" readonly>
+    <small class="note">*Vet/Grooming fee is separate. Will be notified after service.</small>
 
-    <h3>Pick-up Location</h3>
+    <h3>4. Pick-up Location</h3>
     <div id="map"></div>
     <button type="button" id="clearLocationBtn" class="danger">Clear Location 📍</button>
     <input id="lat" type="hidden"><input id="lng" type="hidden">
@@ -86,12 +112,13 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
+  // 1. FIREBASE SETUP
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyBVaqhNCrgDlWGEVjXygszJUdQR_bpG7os", // PALITAN MO TO BOI
+    apiKey: "AIzaSyBVaqhNCrgDlWGEVjXygszJUdQR_bpG7os", // <--- PALITAN MO TO BOI
     authDomain: "safepaws-batangas.firebaseapp.com",
     projectId: "safepaws-batangas",
     storageBucket: "safepaws-batangas.firebasestorage.app",
@@ -103,13 +130,27 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // 2. GLOBALS
   const $ = id => document.getElementById(id);
   let marker = null;
   let map = null;
 
+  // 3. FARE COMPUTE LOGIC
+  function computeFare() {
+    const baseFare = 150; // Sample base fare. Si admin mag-final nito
+    const mode = $('serviceMode').value;
+    const hours = parseInt($('waitTime').value);
+    const rate = mode === 'premium' ? 150 : 50;
+    let total = baseFare;
+    if($('returnTrip').checked) total = total * 2;
+    total += hours * rate;
+    $('fare').value = total;
+  }
+
+  // 4. MAP INIT - FIX SA BLANK MAP
   function initMap() {
     if(map) return; 
-    map = L.map('map').setView([13.7565, 121.0583], 12);
+    map = L.map('map').setView([13.7565, 121.0583], 12); // Batangas Center
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM'}).addTo(map);
     map.on('click', e => {
       if (marker) map.removeLayer(marker);
@@ -117,18 +158,21 @@
       $('lat').value = e.latlng.lat;
       $('lng').value = e.latlng.lng;
     });
-    setTimeout(() => map.invalidateSize(), 200); // Fix sa blank/gray map
+    setTimeout(() => map.invalidateSize(), 200); // Magic para mawala gray
   }
 
+  // 5. AUTH STATE
   onAuthStateChanged(auth, user => {
     $('authBox').style.display = user ? 'none' : 'block';
     $('dashBox').style.display = user ? 'block' : 'none';
     if(user) {
       $('userEmail').textContent = user.email;
-      initMap(); // Mag-load lang mapa pag login na
+      initMap();
+      computeFare();
     }
   });
 
+  // 6. AUTH BUTTONS
   $('signupBtn').onclick = async () => {
     try { await createUserWithEmailAndPassword(auth, $('email').value, $('password').value); }
     catch(e) { alert(e.message); }
@@ -139,6 +183,7 @@
   };
   $('logoutBtn').onclick = () => signOut(auth);
 
+  // 7. PET LOGIC
   window.calcAge = (input) => {
     const birthdate = new Date(input.value);
     const today = new Date();
@@ -181,12 +226,18 @@
     }
   });
 
+  // 8. MAP + FARE LISTENERS
+  $('serviceMode').onchange = computeFare;
+  $('waitTime').onchange = computeFare;
+  $('returnTrip').onchange = computeFare;
+  
   $('clearLocationBtn').onclick = () => {
     if (marker) map.removeLayer(marker);
     marker = null;
     $('lat').value = ''; $('lng').value = '';
   };
 
+  // 9. BOOKING SUBMIT
   $('bookBtn').onclick = async () => {
     const user = auth.currentUser;
     if(!user) return alert('Login first');
@@ -210,21 +261,27 @@
         pets: pets,
         clinic: $('clinic').value,
         serviceType: $('serviceType').value,
+        returnTrip: $('returnTrip').checked,
+        serviceMode: $('serviceMode').value, // premium or budget
+        waitHours: parseInt($('waitTime').value),
         notes: $('notes').value,
         location: { lat: parseFloat($('lat').value), lng: parseFloat($('lng').value) },
         paymentMethod: $('paymentMethod').value,
-        fare: parseFloat($('fare').value) || 0,
-        status: 'pending',
+        estimatedFare: parseFloat($('fare').value) || 0,
+        status: 'pending', // pending > accepted > in_progress > waiting_pickup > completed
+        riderNotified: false, // Para sa "Pet is ready" alert sa driver
         createdAt: serverTimestamp()
       });
-      alert('Booking sent! Waiting for admin approval.');
+      alert('Booking sent! Rider will be notified when pet is ready for pickup.');
       $('bookingForm').reset();
       $('petsContainer').innerHTML = '';
       if (marker) map.removeLayer(marker); marker = null;
       $('addPetBtn').click();
+      computeFare();
     } catch(e) { alert(e.message); }
   };
 
+  // 10. INIT 1 PET ON LOAD
   window.onload = () => $('addPetBtn').click();
 </script>
 </body>
