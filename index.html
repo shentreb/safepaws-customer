@@ -1,53 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SafePaws Customer V1.2</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>SafePaws V1.5</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:'Segoe UI',Arial;background:#0f172a;color:#e5e7eb}
-
-/* SPLASH ANIMATION */
-#splash{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e293b);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;animation:fadeOut 0.5s ease 1.5s forwards}
-#splash div{font-size:80px;animation:bounce 1s infinite}
-#splash h1{margin:10px 0 0;font-size:32px;color:#38bdf8}
-#splash small{color:#94a3b8}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+:root{--bg:#0b1020;--card:rgba(30,41,59,.6);--border:rgba(255,255,255,.1);--accent:#38bdf8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;font-family:'Segoe UI',system-ui;background:var(--bg);color:#e5e7eb;overflow:hidden}
+#splash{position:fixed;inset:0;background:radial-gradient(circle at 30% 20%,#1e293b 0%,var(--bg) 60%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;animation:fadeOut.5s ease 1.5s forwards}
+#splash div{font-size:90px;animation:bounce 1.2s infinite cubic-bezier(.68,-.55,.265,1.55)}
+#splash h1{margin:12px 0 0;font-size:36px;background:linear-gradient(90deg,#38bdf8,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-25px)}}
 @keyframes fadeOut{to{opacity:0;visibility:hidden}}
-
-#loginScreen{display:flex;align-items:center;justify-content:center;height:100vh;background:linear-gradient(135deg,#0f172a,#1e293b)}
-.login-card{background:#1e293b;padding:28px;border-radius:16px;width:90%;max-width:380px;border:1px solid #334155}
-.login-card h1{text-align:center;margin:0 0 16px}
-.login-card input{width:100%;padding:14px;margin:8px 0;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#e5e7eb}
-.login-card button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:12px;background:#38bdf8;color:#0f172a;font-weight:bold;cursor:pointer}
-.login-card button:disabled{opacity:0.6;cursor:not-allowed}
-#appScreen{display:none}
-header{padding:14px 16px;background:#1e293b;border-bottom:1px solid #334155;text-align:center;font-weight:bold}
-.card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin:12px}
-.card input{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e5e7eb}
-#map{height:300px;border-radius:12px;margin-top:12px}
-.rider-card{display:flex;align-items:center;gap:12px}
-.avatar{width:50px;height:50px;border-radius:50%;background:#38bdf8;display:flex;align-items:center;justify-content:center;font-size:24px}
-.status-badge{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:bold;display:inline-block;margin-top:8px}
-.status-wait{background:#f59e0b;color:#0f172a}
-.status-pickup{background:#38bdf8;color:#0f172a}
-.status-otw{background:#a855f7;color:#fff}
-.status-done{background:#16a34a;color:#fff}
-.timeline{margin-top:12px}
-.timeline-item{display:flex;gap:10px;margin:8px 0;color:#94a3b8}
-.timeline-item.active{color:#38bdf8;font-weight:bold}
-.price-row{display:flex;justify-content:space-between;margin:4px 0}
+#loginScreen{display:flex;align-items:center;justify-content:center;height:100vh;padding:20px}
+.login-card{background:var(--card);backdrop-filter:blur(20px);padding:32px;border-radius:24px;width:100%;max-width:400px;border:1px solid var(--border)}
+.login-card h1{text-align:center;margin:0 0 20px;font-size:28px}
+.login-card input{width:100%;padding:16px;margin:10px 0;border-radius:14px;border:1px solid var(--border);background:rgba(15,23,42,.5);color:#e5e7eb;font-size:16px}
+.login-card button{width:100%;padding:16px;margin-top:12px;border:0;border-radius:14px;background:var(--accent);color:#0b1020;font-weight:800;font-size:16px;cursor:pointer}
+#appScreen{display:none;height:100vh;position:relative}
+header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+header h3{margin:0;font-size:20px}
+.logout{background:#dc2626;border:0;color:#fff;padding:8px 14px;border-radius:12px;font-weight:700;font-size:13px}
+nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);display:flex;gap:8px;padding:8px;border-radius:20px;z-index:200;width:calc(100% - 40px);max-width:380px}
+nav button{flex:1;padding:12px;background:0;border:0;color:#94a3b8;font-size:11px;font-weight:600;cursor:pointer;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:4px}
+nav button.active{background:var(--accent);color:#0b1020}
+.tab{display:none;height:100%;overflow-y:auto;padding-bottom:100px}.tab.active{display:block}
+.card{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;padding:20px;margin:16px}
+.card h3{margin:0 0 12px;font-size:18px}
+.input-group{position:relative;margin:10px 0}
+.input-group input{width:100%;padding:16px 45px 16px 16px;border-radius:14px;border:1px solid var(--border);background:rgba(15,23,42,.5);color:#e5e7eb;font-size:15px}
+.swap-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--accent);border:0;border-radius:10px;width:36px;height:36px;font-size:18px;cursor:pointer}
+#map{position:fixed;inset:0;z-index:0}
+.map-overlay{position:fixed;bottom:0;left:0;right:0;z-index:100;background:linear-gradient(transparent,rgba(11,16,32,.9) 20%);padding-top:200px}
+.sheet{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:20px;max-height:60vh;overflow-y:auto}
+.rider-card{display:flex;align-items:center;gap:14px}
+.avatar{width:56px;height:56px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:28px}
+.status-chip{padding:10px 16px;border-radius:999px;font-size:13px;font-weight:800;display:inline-block;margin:12px 0;text-align:center;width:100%}
+.timeline{display:flex;justify-content:space-between;margin:16px 0}
+.timeline-item{text-align:center;flex:1;font-size:11px;color:#64748b}
+.timeline-item.dot{width:14px;height:14px;border-radius:50%;background:#334155;margin:0 auto 6px}
+.timeline-item.active{color:var(--accent)}
+.timeline-item.active.dot{background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.price-row{display:flex;justify-content:space-between;margin:8px 0;font-size:15px}
+.eta-badge{background:#f59e0b;color:#0b1020;padding:6px 12px;border-radius:10px;font-weight:700;font-size:13px;display:inline-block;margin:8px 0}
 small{color:#94a3b8}
+button.primary{width:100%;padding:16px;margin-top:12px;border:0;border-radius:14px;background:var(--accent);color:#0b1020;font-weight:800;font-size:16px;cursor:pointer}
+button.primary:disabled{opacity:.5}
 </style>
 </head>
 <body>
 
-<!-- SPLASH SCREEN -->
-<div id="splash">
-  <div>🐾</div>
-  <h1>SafePaws</h1>
-  <small>Pet Transport</small>
-</div>
+<div id="splash"><div>🐾</div><h1>SafePaws</h1></div>
 
 <div id="loginScreen" style="display:none">
   <div class="login-card">
@@ -59,57 +62,75 @@ small{color:#94a3b8}
 </div>
 
 <div id="appScreen">
-<header id="headerTitle">Book a Ride</header>
+<div id="map"></div>
 
-<!-- BOOKING SCREEN -->
-<div id="bookScreen">
-  <div class="card">
-    <h3>📍 Pet Transport</h3>
-    <input id="petName" placeholder="Pet Name e.g. Bantay">
-    <input id="petBreed" placeholder="Breed e.g. Aspin">
-    <input id="pickup" placeholder="Pick-up Location e.g. Bauan Plaza">
-    <input id="dropoff" placeholder="Drop-off Vet/Groom e.g. Talisay Vet">
-    <small>Fare = ₱80 + ₱15/KM. Min ₱250</small>
-    <button id="bookBtn" onclick="bookRide()">Book Now</button>
-  </div>
-</div>
+<header><h3 id="headerTitle">🏠 Book</h3><button class="logout" onclick="logout()">Logout</button></header>
 
-<!-- TRACKING SCREEN -->
-<div id="trackScreen" style="display:none">
-  <div class="card rider-card">
-    <div class="avatar">🏍️</div>
-    <div>
-      <b id="riderName">Finding rider...</b><br>
-      <small id="riderPlate"></small><br>
-      <small id="riderPhone"></small>
+<main>
+  <!-- BOOK TAB -->
+  <div id="bookTab" class="tab active">
+    <div id="bookScreen" class="map-overlay">
+      <div class="sheet">
+        <div class="card">
+          <h3>📍 Book a Pet Ride</h3>
+          <input id="petName" placeholder="Pet Name e.g. Bantay">
+          <input id="petBreed" placeholder="Breed e.g. Aspin">
+          <div class="input-group">
+            <input id="pickup" placeholder="From: Bauan Plaza, Batangas">
+            <button class="swap-btn" onclick="swapLocations()">🔄</button>
+          </div>
+          <div class="input-group">
+            <input id="dropoff" placeholder="To: Talisay Vet, Batangas">
+          </div>
+          <small>₱80 + ₱15/KM. Min ₱250</small>
+          <button id="bookBtn" class="primary" onclick="bookRide()">Book Now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRACKING SHEET -->
+    <div id="trackScreen" class="map-overlay" style="display:none">
+      <div class="sheet">
+        <div class="card rider-card">
+          <div class="avatar">🏍️</div>
+          <div><b id="riderName">Finding rider...</b><br><small id="riderPlate"></small> • <small id="riderPhone"></small></div>
+        </div>
+        <div class="card">
+          <div class="price-row"><span>Distance</span><b id="kmText">0KM</b></div>
+          <div class="price-row"><span>Fare</span><b id="fareText">₱0</b></div>
+          <div class="price-row"><span>ETA</span><b class="eta-badge" id="etaText">~0 mins</b></div>
+          <span id="statusChip" class="status-chip">Waiting for Rider</span>
+          <div class="timeline">
+            <div id="t1" class="timeline-item active"><div class="dot"></div>Assigned</div>
+            <div id="t2" class="timeline-item"><div class="dot"></div>Picked</div>
+            <div id="t3" class="timeline-item"><div class="dot"></div>OTW</div>
+            <div id="t4" class="timeline-item"><div class="dot"></div>Done</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-  
-  <div class="card">
-    <div class="price-row"><span>Distance:</span> <b id="kmText">0KM</b></div>
-    <div class="price-row"><span>Fare:</span> <b id="fareText">₱0</b></div>
-    <hr style="border:0;border-top:1px solid #334155;margin:8px 0">
-    <b>Status: </b><span id="statusBadge" class="status-badge status-wait">Waiting for Rider</span>
-    <div class="timeline">
-      <div id="t1" class="timeline-item active">● Rider Assigned</div>
-      <div id="t2" class="timeline-item">● Picked Up Pet</div>
-      <div id="t3" class="timeline-item">● On The Way</div>
-      <div id="t4" class="timeline-item">● Dropped Off ✓</div>
-    </div>
-  </div>
 
-  <div id="map"></div>
-</div>
+  <!-- HISTORY TAB -->
+  <div id="historyTab" class="tab"><div class="card"><h3>📜 My Bookings</h3><div id="historyList"><small>Loading...</small></div></div></div>
 
+  <!-- PROFILE TAB -->
+  <div id="profileTab" class="tab"><div class="card"><h3>👤 My Profile</h3><input id="pName" placeholder="Full Name"><input id="pPhone" placeholder="Phone"><button class="primary" style="margin-top:12px" onclick="saveProfile()">Save Changes</button></div></div>
+</main>
+
+<nav>
+  <button class="active" onclick="switchTab('bookTab',this)">🏠<br>Book</button>
+  <button onclick="switchTab('historyTab',this)">📜<br>History</button>
+  <button onclick="switchTab('profileTab',this)">👤<br>Profile</button>
+</nav>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, doc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, doc, onSnapshot, updateDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* 🔥 LAGAY MO DITO YUNG FIREBASE CONFIG MO 🔥 */
 const firebaseConfig = {
   apiKey: "AIzaSyBVaqhNCrgDlWGEVjXygszJUdQR_bpG7os",
   authDomain: "safepaws-batangas.firebaseapp.com",
@@ -118,140 +139,43 @@ const firebaseConfig = {
   messagingSenderId: "629904615191",
   appId: "1:629904615191:web:45f7148d65ba61a867f952"
 };
+  
+const app=initializeApp(firebaseConfig);const auth=getAuth(app);const db=getFirestore(app);
+let uid,bookingId,map,riderMarker;
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-let uid, bookingId, map, riderMarker;
+onAuthStateChanged(auth,async user=>{if(user){uid=user.uid;document.getElementById('loginScreen').style.display='none';document.getElementById('appScreen').style.display='block';initMap(13.81,121.02);loadProfile();loadHistory();checkActiveBooking();}else{document.getElementById('loginScreen').style.display='flex';document.getElementById('appScreen').style.display='none';}});
+async function login(){try{await signInWithEmailAndPassword(auth,document.getElementById('email').value,document.getElementById('pass').value);}catch(e){alert(e.message);}}
+window.login=login;window.logout=()=>signOut(auth);
 
-onAuthStateChanged(auth, user=>{
-  if(user){
-    uid=user.uid;
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('appScreen').style.display='block';
-    checkActiveBooking();
-  }else{
-    document.getElementById('loginScreen').style.display='flex';
-  }
-});
+function swapLocations(){const p=document.getElementById('pickup');const d=document.getElementById('dropoff');const t=p.value;p.value=d.value;d.value=t;}
+window.swapLocations=swapLocations;
 
-async function login(){
-  try{await signInWithEmailAndPassword(auth,document.getElementById('email').value,document.getElementById('pass').value);}
-  catch(e){alert(e.message);}
-}
-window.login=login;
+async function loadProfile(){const ref=doc(db,'customers',uid);const snap=await getDoc(ref);if(snap.exists()){document.getElementById('pName').value=snap.data().name||'';document.getElementById('pPhone').value=snap.data().phone||'';}}
+async function saveProfile(){await updateDoc(doc(db,'customers',uid),{name:document.getElementById('pName').value,phone:document.getElementById('pPhone').value},{merge:true});alert('Profile Saved!');}
+window.saveProfile=saveProfile;
+
+function loadHistory(){onSnapshot(collection(db,'bookings'),snap=>{const list=document.getElementById('historyList');const mine=snap.docs.filter(d=>d.data().customerId===uid).reverse();if(mine.length===0){list.innerHTML='<small>No bookings yet</small>';return;}list.innerHTML=mine.map(d=>{const b=d.data();return`<div style="border-bottom:1px solid var(--border);padding:12px 0"><b>${b.petName} - ${b.petBreed}</b><br><small>${b.pickup} > ${b.dropoff}</small><br><small>₱${b.fare} | ${b.status}</small></div>`;}).join('');});}
 
 async function bookRide(){
-  const btn = document.getElementById('bookBtn');
-  btn.disabled = true;
-  btn.textContent = 'Booking...';
-
-  const pickupText = document.getElementById('pickup').value;
-  const dropoffText = document.getElementById('dropoff').value;
-  if(!pickupText || !dropoffText){alert('Fill all fields');btn.disabled=false;btn.textContent='Book Now';return;}
-
-  const p1 = await geocode(pickupText);
-  const p2 = await geocode(dropoffText);
-  if(!p1 || !p2){alert('Invalid location. Try: Bauan, Batangas');btn.disabled=false;btn.textContent='Book Now';return;}
-
-  const km = haversine(p1.lat, p1.lng, p2.lat, p2.lng);
-  const baseFare = 80;
-  const perKm = 15;
-  const fare = Math.max(250, Math.round(baseFare + (km * perKm)));
-
-  const data = {
-    customerId: uid,
-    petName: document.getElementById('petName').value,
-    petBreed: document.getElementById('petBreed').value,
-    pickup: pickupText, pickupLat: p1.lat, pickupLng: p1.lng,
-    dropoff: dropoffText, dropoffLat: p2.lat, dropoffLng: p2.lng,
-    distanceKm: km.toFixed(1),
-    fare: fare,
-    status: 'pending',
-    riderId: null,
-    createdAt: serverTimestamp()
-  };
-  const ref = await addDoc(collection(db,'bookings'), data);
-  bookingId = ref.id;
-  alert(`Booking created! \nDistance: ${km.toFixed(1)}KM \nFare: ₱${fare}`);
-  showTrackScreen();
-  btn.disabled=false;
-  btn.textContent='Book Now';
+  const btn=document.getElementById('bookBtn');btn.disabled=true;btn.textContent='Booking...';
+  const pickupText=document.getElementById('pickup').value;const dropoffText=document.getElementById('dropoff').value;
+  if(!pickupText||!dropoffText){alert('Fill all fields');btn.disabled=false;btn.textContent='Book Now';return;}
+  const p1=await geocode(pickupText);const p2=await geocode(dropoffText);
+  if(!p1||!p2){alert('Invalid location. Add, Batangas');btn.disabled=false;btn.textContent='Book Now';return;}
+  const km=haversine(p1.lat,p1.lng,p2.lat,p2.lng);const fare=Math.max(250,Math.round(80+(km*15)));
+  const data={customerId:uid,petName:document.getElementById('petName').value,petBreed:document.getElementById('petBreed').value,pickup:pickupText,pickupLat:p1.lat,pickupLng:p1.lng,dropoff:dropoffText,dropoffLat:p2.lat,dropoffLng:p2.lng,distanceKm:km.toFixed(1),fare:fare,status:'pending',riderId:null,createdAt:serverTimestamp()};
+  const ref=await addDoc(collection(db,'bookings'),data);bookingId=ref.id;alert(`Booking created! \n${km.toFixed(1)}KM | ₱${fare}`);showTrackScreen();btn.disabled=false;btn.textContent='Book Now';
 }
 window.bookRide=bookRide;
 
-function checkActiveBooking(){
-  onSnapshot(collection(db,'bookings'), snap=>{
-    const myBooking = snap.docs.find(d=>d.data().customerId===uid && d.data().status!=='completed');
-    if(myBooking){
-      bookingId = myBooking.id;
-      listenBooking(myBooking.id);
-      showTrackScreen();
-    }
-  });
-}
-
-function listenBooking(id){
-  onSnapshot(doc(db,'bookings',id), snap=>{
-    const b = snap.data();
-    if(!b) return;
-
-    document.getElementById('kmText').textContent = b.distanceKm + 'KM';
-    document.getElementById('fareText').textContent = '₱' + b.fare;
-
-    if(b.riderId){
-      onSnapshot(doc(db,'riders',b.riderId), rSnap=>{
-        const r = rSnap.data();
-        if(r){
-          document.getElementById('riderName').textContent = r.name;
-          document.getElementById('riderPlate').textContent = r.plate;
-          document.getElementById('riderPhone').textContent = r.phone;
-          if(r.lat && r.lng){
-            if(!map) initMap(r.lat,r.lng);
-            riderMarker.setLatLng([r.lat,r.lng]);
-          }
-        }
-      });
-    }
-
-    const status = b.status;
-    const badge = document.getElementById('statusBadge');
-    document.querySelectorAll('.timeline-item').forEach(i=>i.classList.remove('active'));
-    
-    if(status==='pending'){badge.textContent='Waiting for Admin/Rider';badge.className='status-badge status-wait';document.getElementById('t1').classList.add('active');}
-    if(status==='assigned'){badge.textContent='Rider On The Way';badge.className='status-badge status-wait';document.getElementById('t1').classList.add('active');}
-    if(status==='pickedup'){badge.textContent='Pet Picked Up';badge.className='status-badge status-pickup';document.getElementById('t1').classList.add('active');document.getElementById('t2').classList.add('active'); alert('🐾 Pet has been picked up by '+b.riderName);}
-    if(status==='otw'){badge.textContent='On The Way to Vet';badge.className='status-badge status-otw';document.getElementById('t1').classList.add('active');document.getElementById('t2').classList.add('active');document.getElementById('t3').classList.add('active');}
-    if(status==='completed'){badge.textContent='Dropped Off ✓';badge.className='status-badge status-done';document.querySelectorAll('.timeline-item').forEach(i=>i.classList.add('active')); alert('✅ Pet safely dropped off!');}
-  });
-}
-
-function initMap(lat,lng){
-  map=L.map('map').setView([lat,lng],15);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-  riderMarker=L.marker([lat,lng]).addTo(map).bindPopup('Your Rider');
-}
-
-function showTrackScreen(){
-  document.getElementById('bookScreen').style.display='none';
-  document.getElementById('trackScreen').style.display='block';
-  document.getElementById('headerTitle').textContent='Tracking Your Pet';
-}
-
-function haversine(lat1,lon1,lat2,lon2){
-  const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180;
-  const a=Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-
-async function geocode(q){
-  try{
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);
-    const data = await res.json();
-    if(data.length>0) return {lat:parseFloat(data[0].lat), lng:parseFloat(data[0].lon)};
-  }catch(e){console.log(e)}
-  return null;
-}
+function checkActiveBooking(){onSnapshot(collection(db,'bookings'),snap=>{const myBooking=snap.docs.find(d=>d.data().customerId===uid&&d.data().status!=='completed');if(myBooking){bookingId=myBooking.id;listenBooking(myBooking.id);showTrackScreen();}});}
+function listenBooking(id){onSnapshot(doc(db,'bookings',id),snap=>{const b=snap.data();if(!b)return;document.getElementById('kmText').textContent=b.distanceKm+'KM';document.getElementById('fareText').textContent='₱'+b.fare;document.getElementById('etaText').textContent='~'+Math.round(b.distanceKm*1.2)+' mins';if(b.riderId){onSnapshot(doc(db,'riders',b.riderId),rSnap=>{const r=rSnap.data();if(r){document.getElementById('riderName').textContent=r.name;document.getElementById('riderPlate').textContent=r.plate;document.getElementById('riderPhone').textContent=r.phone;if(r.lat&&r.lng){riderMarker.setLatLng([r.lat,r.lng]);map.setView([r.lat,r.lng],15);}}});}const status=b.status;const chip=document.getElementById('statusChip');document.querySelectorAll('.timeline-item').forEach(i=>i.classList.remove('active'));if(status==='pending'){chip.textContent='Waiting for Rider';chip.style.background='#f59e0b';chip.style.color='#0b1020';document.getElementById('t1').classList.add('active');}if(status==='assigned'){chip.textContent='Rider On The Way';chip.style.background='#38bdf8';chip.style.color='#0b1020';document.getElementById('t1').classList.add('active');}if(status==='pickedup'){chip.textContent='Pet Picked Up';chip.style.background='#38bdf8';document.getElementById('t1').classList.add('active');document.getElementById('t2').classList.add('active');alert('🐾 Pet Picked Up');}if(status==='otw'){chip.textContent='On The Way to Vet';chip.style.background='#a855f7';document.getElementById('t1').classList.add('active');document.getElementById('t2').classList.add('active');document.getElementById('t3').classList.add('active');}if(status==='completed'){chip.textContent='Dropped Off ✓';chip.style.background='#16a34a';document.querySelectorAll('.timeline-item').forEach(i=>i.classList.add('active'));alert('✅ Pet Safely Dropped Off');}});}
+function initMap(lat,lng){map=L.map('map',{zoomControl:false}).setView([lat,lng],13);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:''}).addTo(map);riderMarker=L.marker([lat,lng]).addTo(map).bindPopup('Your Rider');}
+function showTrackScreen(){document.getElementById('bookScreen').style.display='none';document.getElementById('trackScreen').style.display='block';document.getElementById('headerTitle').textContent='Tracking';}
+function switchTab(id,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active');btn.classList.add('active');document.getElementById('headerTitle').textContent=btn.innerText.split('\n')[0];if(id==='bookTab'){document.getElementById('bookScreen').style.display='block';document.getElementById('trackScreen').style.display='none';}}
+window.switchTab=switchTab;
+function haversine(lat1,lon1,lat2,lon2){const R=6371;const dLat=(lat2-lat1)*Math.PI/180;const dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+async function geocode(q){try{const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);const data=await res.json();if(data.length>0)return{lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon)};}catch(e){}return null;}
 </script>
 </body>
 </html>
