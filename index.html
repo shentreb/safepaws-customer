@@ -1,288 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SafePaws Customer</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SafePaws Customer V1.2</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-  body{font-family:system-ui;background:#f8fafc;margin:0;padding:20px}
-  .card{background:#fff;padding:16px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);margin-bottom:16px}
-  input,select,textarea,button{width:100%;padding:10px;margin-top:6px;border:1px solid #ddd;border-radius:10px;font-size:14px}
-  button{background:#2563eb;color:#fff;border:0;cursor:pointer;font-weight:600}
-  button.secondary{background:#e5e7eb;color:#111}
-  button.danger{background:#ef4444}
-  label{font-size:12px;font-weight:600;color:#374151;margin-top:10px;display:block}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  #map{height:250px;border-radius:12px;margin-top:8px;z-index:1}
-  .pet-card{border:1px dashed #ccc;padding:12px;border-radius:12px;margin-top:12px;position:relative;background:#fafafa}
-  .remove-pet{position:absolute;top:8px;right:8px;width:auto;padding:4px 8px;font-size:12px;background:#ef4444}
-  h3{margin:16px 0 8px 0}
-  .toggle{display:flex;align-items:center;gap:10px;margin-top:10px}
-  .toggle input{width:auto}
-  .note{font-size:12px;color:#666;margin-top:4px}
+*{box-sizing:border-box}body{margin:0;font-family:'Segoe UI',Arial;background:#0f172a;color:#e5e7eb}
+
+/* SPLASH ANIMATION */
+#splash{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e293b);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;animation:fadeOut 0.5s ease 1.5s forwards}
+#splash div{font-size:80px;animation:bounce 1s infinite}
+#splash h1{margin:10px 0 0;font-size:32px;color:#38bdf8}
+#splash small{color:#94a3b8}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+@keyframes fadeOut{to{opacity:0;visibility:hidden}}
+
+#loginScreen{display:flex;align-items:center;justify-content:center;height:100vh;background:linear-gradient(135deg,#0f172a,#1e293b)}
+.login-card{background:#1e293b;padding:28px;border-radius:16px;width:90%;max-width:380px;border:1px solid #334155}
+.login-card h1{text-align:center;margin:0 0 16px}
+.login-card input{width:100%;padding:14px;margin:8px 0;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#e5e7eb}
+.login-card button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:12px;background:#38bdf8;color:#0f172a;font-weight:bold;cursor:pointer}
+.login-card button:disabled{opacity:0.6;cursor:not-allowed}
+#appScreen{display:none}
+header{padding:14px 16px;background:#1e293b;border-bottom:1px solid #334155;text-align:center;font-weight:bold}
+.card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin:12px}
+.card input{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e5e7eb}
+#map{height:300px;border-radius:12px;margin-top:12px}
+.rider-card{display:flex;align-items:center;gap:12px}
+.avatar{width:50px;height:50px;border-radius:50%;background:#38bdf8;display:flex;align-items:center;justify-content:center;font-size:24px}
+.status-badge{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:bold;display:inline-block;margin-top:8px}
+.status-wait{background:#f59e0b;color:#0f172a}
+.status-pickup{background:#38bdf8;color:#0f172a}
+.status-otw{background:#a855f7;color:#fff}
+.status-done{background:#16a34a;color:#fff}
+.timeline{margin-top:12px}
+.timeline-item{display:flex;gap:10px;margin:8px 0;color:#94a3b8}
+.timeline-item.active{color:#38bdf8;font-weight:bold}
+.price-row{display:flex;justify-content:space-between;margin:4px 0}
+small{color:#94a3b8}
 </style>
 </head>
 <body>
 
-<!-- 1. AUTH BOX -->
-<div id="authBox" class="card">
-  <h2>SafePaws Login 🐾</h2>
-  <input id="email" type="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-  <div class="row">
-    <button id="signupBtn">Sign Up</button>
-    <button id="loginBtn" class="secondary">Login</button>
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <div>🐾</div>
+  <h1>SafePaws</h1>
+  <small>Pet Transport</small>
+</div>
+
+<div id="loginScreen" style="display:none">
+  <div class="login-card">
+    <h1>🐾 SafePaws</h1>
+    <input id="email" type="email" placeholder="Email">
+    <input id="pass" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
   </div>
 </div>
 
-<!-- 2. DASHBOARD / BOOKING FORM -->
-<div id="dashBox" class="card" style="display:none">
-  <h2>Book a Ride 🐾</h2>
-  <p>Logged in as: <b id="userEmail"></b> <button id="logoutBtn" class="secondary" style="width:auto;float:right;padding:6px 10px">Logout</button></p>
+<div id="appScreen">
+<header id="headerTitle">Book a Ride</header>
 
-  <form id="bookingForm">
-    <h3>1. Pets</h3>
-    <div id="petsContainer"></div>
-    <button type="button" id="addPetBtn" class="secondary">+ Add Another Pet</button>
+<!-- BOOKING SCREEN -->
+<div id="bookScreen">
+  <div class="card">
+    <h3>📍 Pet Transport</h3>
+    <input id="petName" placeholder="Pet Name e.g. Bantay">
+    <input id="petBreed" placeholder="Breed e.g. Aspin">
+    <input id="pickup" placeholder="Pick-up Location e.g. Bauan Plaza">
+    <input id="dropoff" placeholder="Drop-off Vet/Groom e.g. Talisay Vet">
+    <small>Fare = ₱80 + ₱15/KM. Min ₱250</small>
+    <button id="bookBtn" onclick="bookRide()">Book Now</button>
+  </div>
+</div>
 
-    <h3>2. Service Details</h3>
-    <label>Clinic Location</label>
-    <select id="clinic" required>
-      <option value="">Select Clinic</option>
-      <option>Pet Wellness Center - Batangas City</option>
-      <option>VetCare Lipa</option>
-      <option>Tanauan Animal Clinic</option>
-      <option>St. Francis Vet - Bauan</option>
-      <option>Other / Home Service</option>
-    </select>
-
-    <label>Service Type</label>
-    <select id="serviceType">
-      <option>Pet Taxi</option>
-      <option>Vet Appointment</option>
-      <option>Grooming</option>
-      <option>Emergency</option>
-    </select>
-
-    <div class="toggle">
-      <input type="checkbox" id="returnTrip">
-      <label for="returnTrip">Return Trip? Hatid + Sundo = x2 Fare</label>
+<!-- TRACKING SCREEN -->
+<div id="trackScreen" style="display:none">
+  <div class="card rider-card">
+    <div class="avatar">🏍️</div>
+    <div>
+      <b id="riderName">Finding rider...</b><br>
+      <small id="riderPlate"></small><br>
+      <small id="riderPhone"></small>
     </div>
-    
-    <label>Service Mode</label>
-    <select id="serviceMode">
-      <option value="premium">Premium - ₱150/hr, Rider waits only for you</option>
-      <option value="budget">Budget - ₱50/hr, Rider can take other bookings</option>
-    </select>
-    <div class="note">*Budget mode = mas mura pero baka ma-delay sundo</div>
+  </div>
+  
+  <div class="card">
+    <div class="price-row"><span>Distance:</span> <b id="kmText">0KM</b></div>
+    <div class="price-row"><span>Fare:</span> <b id="fareText">₱0</b></div>
+    <hr style="border:0;border-top:1px solid #334155;margin:8px 0">
+    <b>Status: </b><span id="statusBadge" class="status-badge status-wait">Waiting for Rider</span>
+    <div class="timeline">
+      <div id="t1" class="timeline-item active">● Rider Assigned</div>
+      <div id="t2" class="timeline-item">● Picked Up Pet</div>
+      <div id="t3" class="timeline-item">● On The Way</div>
+      <div id="t4" class="timeline-item">● Dropped Off ✓</div>
+    </div>
+  </div>
 
-    <label>Estimated Waiting Time</label>
-    <select id="waitTime">
-      <option value="0">No Waiting - Drop only</option>
-      <option value="1">1 Hour</option>
-      <option value="2">2 Hours</option>
-      <option value="3">3 Hours</option>
-    </select>
+  <div id="map"></div>
+</div>
 
-    <label>Notes for Driver</label>
-    <textarea id="notes" placeholder="e.g. Nervous pet, bring leash, gate code"></textarea>
-
-    <h3>3. Payment</h3>
-    <label>Payment Method</label>
-    <select id="paymentMethod" required>
-      <option value="">Select Payment</option>
-      <option>Cash on Delivery</option>
-      <option>GCash</option>
-      <option>PayMaya</option>
-    </select>
-
-    <label>Estimated Fare for Rider Only ₱</label>
-    <input id="fare" type="number" placeholder="Auto compute" step="0.01" readonly>
-    <small class="note">*Vet/Grooming fee is separate. Will be notified after service.</small>
-
-    <h3>4. Pick-up Location</h3>
-    <div id="map"></div>
-    <button type="button" id="clearLocationBtn" class="danger">Clear Location 📍</button>
-    <input id="lat" type="hidden"><input id="lng" type="hidden">
-    
-    <button type="button" id="bookBtn" style="margin-top:16px">Book Now</button>
-  </form>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
-  // 1. FIREBASE SETUP
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, doc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBVaqhNCrgDlWGEVjXygszJUdQR_bpG7os", // <--- PALITAN MO TO BOI
-    authDomain: "safepaws-batangas.firebaseapp.com",
-    projectId: "safepaws-batangas",
-    storageBucket: "safepaws-batangas.firebasestorage.app",
-    messagingSenderId: "629904615191",
-    appId: "1:629904615191:web:45f7148d65ba61a867f952"
+/* 🔥 LAGAY MO DITO YUNG FIREBASE CONFIG MO 🔥 */
+const firebaseConfig = {
+  apiKey: "AIzaSyBVaqhNCrgDlWGEVjXygszJUdQR_bpG7os",
+  authDomain: "safepaws-batangas.firebaseapp.com",
+  projectId: "safepaws-batangas",
+  storageBucket: "safepaws-batangas.firebasestorage.app",
+  messagingSenderId: "629904615191",
+  appId: "1:629904615191:web:45f7148d65ba61a867f952"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+let uid, bookingId, map, riderMarker;
+
+onAuthStateChanged(auth, user=>{
+  if(user){
+    uid=user.uid;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appScreen').style.display='block';
+    checkActiveBooking();
+  }else{
+    document.getElementById('loginScreen').style.display='flex';
+  }
+});
+
+async function login(){
+  try{await signInWithEmailAndPassword(auth,document.getElementById('email').value,document.getElementById('pass').value);}
+  catch(e){alert(e.message);}
+}
+window.login=login;
+
+async function bookRide(){
+  const btn = document.getElementById('bookBtn');
+  btn.disabled = true;
+  btn.textContent = 'Booking...';
+
+  const pickupText = document.getElementById('pickup').value;
+  const dropoffText = document.getElementById('dropoff').value;
+  if(!pickupText || !dropoffText){alert('Fill all fields');btn.disabled=false;btn.textContent='Book Now';return;}
+
+  const p1 = await geocode(pickupText);
+  const p2 = await geocode(dropoffText);
+  if(!p1 || !p2){alert('Invalid location. Try: Bauan, Batangas');btn.disabled=false;btn.textContent='Book Now';return;}
+
+  const km = haversine(p1.lat, p1.lng, p2.lat, p2.lng);
+  const baseFare = 80;
+  const perKm = 15;
+  const fare = Math.max(250, Math.round(baseFare + (km * perKm)));
+
+  const data = {
+    customerId: uid,
+    petName: document.getElementById('petName').value,
+    petBreed: document.getElementById('petBreed').value,
+    pickup: pickupText, pickupLat: p1.lat, pickupLng: p1.lng,
+    dropoff: dropoffText, dropoffLat: p2.lat, dropoffLng: p2.lng,
+    distanceKm: km.toFixed(1),
+    fare: fare,
+    status: 'pending',
+    riderId: null,
+    createdAt: serverTimestamp()
   };
-  
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+  const ref = await addDoc(collection(db,'bookings'), data);
+  bookingId = ref.id;
+  alert(`Booking created! \nDistance: ${km.toFixed(1)}KM \nFare: ₱${fare}`);
+  showTrackScreen();
+  btn.disabled=false;
+  btn.textContent='Book Now';
+}
+window.bookRide=bookRide;
 
-  // 2. GLOBALS
-  const $ = id => document.getElementById(id);
-  let marker = null;
-  let map = null;
-
-  // 3. FARE COMPUTE LOGIC
-  function computeFare() {
-    const baseFare = 150; // Sample base fare. Si admin mag-final nito
-    const mode = $('serviceMode').value;
-    const hours = parseInt($('waitTime').value);
-    const rate = mode === 'premium' ? 150 : 50;
-    let total = baseFare;
-    if($('returnTrip').checked) total = total * 2;
-    total += hours * rate;
-    $('fare').value = total;
-  }
-
-  // 4. MAP INIT - FIX SA BLANK MAP
-  function initMap() {
-    if(map) return; 
-    map = L.map('map').setView([13.7565, 121.0583], 12); // Batangas Center
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM'}).addTo(map);
-    map.on('click', e => {
-      if (marker) map.removeLayer(marker);
-      marker = L.marker(e.latlng).addTo(map);
-      $('lat').value = e.latlng.lat;
-      $('lng').value = e.latlng.lng;
-    });
-    setTimeout(() => map.invalidateSize(), 200); // Magic para mawala gray
-  }
-
-  // 5. AUTH STATE
-  onAuthStateChanged(auth, user => {
-    $('authBox').style.display = user ? 'none' : 'block';
-    $('dashBox').style.display = user ? 'block' : 'none';
-    if(user) {
-      $('userEmail').textContent = user.email;
-      initMap();
-      computeFare();
+function checkActiveBooking(){
+  onSnapshot(collection(db,'bookings'), snap=>{
+    const myBooking = snap.docs.find(d=>d.data().customerId===uid && d.data().status!=='completed');
+    if(myBooking){
+      bookingId = myBooking.id;
+      listenBooking(myBooking.id);
+      showTrackScreen();
     }
   });
+}
 
-  // 6. AUTH BUTTONS
-  $('signupBtn').onclick = async () => {
-    try { await createUserWithEmailAndPassword(auth, $('email').value, $('password').value); }
-    catch(e) { alert(e.message); }
-  };
-  $('loginBtn').onclick = async () => {
-    try { await signInWithEmailAndPassword(auth, $('email').value, $('password').value); }
-    catch(e) { alert(e.message); }
-  };
-  $('logoutBtn').onclick = () => signOut(auth);
+function listenBooking(id){
+  onSnapshot(doc(db,'bookings',id), snap=>{
+    const b = snap.data();
+    if(!b) return;
 
-  // 7. PET LOGIC
-  window.calcAge = (input) => {
-    const birthdate = new Date(input.value);
-    const today = new Date();
-    let age = today.getFullYear() - birthdate.getFullYear();
-    const m = today.getMonth() - birthdate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthdate.getDate())) age--;
-    input.closest('.pet-card').querySelector('.petAge').value = age >= 0 ? age : '';
-  }
+    document.getElementById('kmText').textContent = b.distanceKm + 'KM';
+    document.getElementById('fareText').textContent = '₱' + b.fare;
 
-  $('addPetBtn').onclick = () => {
-    const petHTML = `
-      <div class="pet-card">
-        <button type="button" class="remove-pet">X</button>
-        <label>Pet Name</label>
-        <input class="petName" placeholder="e.g. Bruno" required>
-        <label>Pet Type</label>
-        <select class="petType" required>
-          <option>Dog</option><option>Cat</option><option>Rabbit</option>
-          <option>Bird</option><option>Other</option>
-        </select>
-        <label>Birthdate</label>
-        <input type="date" class="petBday" onchange="calcAge(this)" required>
-        <label>Age</label>
-        <input class="petAge" placeholder="Auto" readonly>
-        <label>Weight (kg)</label>
-        <input type="number" class="petWeight" placeholder="e.g. 12.5" step="0.1">
-        <label>Medical Notes</label>
-        <textarea class="petMedical" placeholder="Allergies, meds, etc."></textarea>
-      </div>`;
-    $('petsContainer').insertAdjacentHTML('beforeend', petHTML);
-  }
-  
-  $('petsContainer').addEventListener('click', e => {
-    if(e.target.classList.contains('remove-pet')){
-      if(document.querySelectorAll('.pet-card').length > 1){
-        e.target.closest('.pet-card').remove();
-      } else {
-        alert('Need at least 1 pet');
-      }
-    }
-  });
-
-  // 8. MAP + FARE LISTENERS
-  $('serviceMode').onchange = computeFare;
-  $('waitTime').onchange = computeFare;
-  $('returnTrip').onchange = computeFare;
-  
-  $('clearLocationBtn').onclick = () => {
-    if (marker) map.removeLayer(marker);
-    marker = null;
-    $('lat').value = ''; $('lng').value = '';
-  };
-
-  // 9. BOOKING SUBMIT
-  $('bookBtn').onclick = async () => {
-    const user = auth.currentUser;
-    if(!user) return alert('Login first');
-    if(!$('lat').value) return alert('Click the map to set location');
-    if(!$('paymentMethod').value) return alert('Select payment method');
-
-    const pets = [...document.querySelectorAll('.pet-card')].map(card => ({
-      name: card.querySelector('.petName').value,
-      type: card.querySelector('.petType').value,
-      birthdate: card.querySelector('.petBday').value,
-      age: card.querySelector('.petAge').value,
-      weight: card.querySelector('.petWeight').value,
-      medical: card.querySelector('.petMedical').value,
-    }));
-
-    if(pets.some(p => !p.name || !p.birthdate)) return alert('Complete all pet details');
-
-    try {
-      await addDoc(collection(db, 'bookings'), {
-        userId: user.uid, email: user.email,
-        pets: pets,
-        clinic: $('clinic').value,
-        serviceType: $('serviceType').value,
-        returnTrip: $('returnTrip').checked,
-        serviceMode: $('serviceMode').value, // premium or budget
-        waitHours: parseInt($('waitTime').value),
-        notes: $('notes').value,
-        location: { lat: parseFloat($('lat').value), lng: parseFloat($('lng').value) },
-        paymentMethod: $('paymentMethod').value,
-        estimatedFare: parseFloat($('fare').value) || 0,
-        status: 'pending', // pending > accepted > in_progress > waiting_pickup > completed
-        riderNotified: false, // Para sa "Pet is ready" alert sa driver
-        createdAt: serverTimestamp()
+    if(b.riderId){
+      onSnapshot(doc(db,'riders',b.riderId), rSnap=>{
+        const r = rSnap.data();
+        if(r){
+          document.getElementById('riderName').textContent = r.name;
+          document.getElementById('riderPlate').textContent = r.plate;
+          document.getElementById('riderPhone').textContent = r.phone;
+          if(r.lat && r.lng){
+            if(!map) initMap(r.lat,r.lng);
+            riderMarker.setLatLng([r.lat,r.lng]);
+          }
+        }
       });
-      alert('Booking sent! Rider will be notified when pet is ready for pickup.');
-      $('bookingForm').reset();
-      $('petsContainer').innerHTML = '';
-      if (marker) map.removeLayer(marker); marker = null;
-      $('addPetBtn').click();
-      computeFare();
-    } catch(e) { alert(e.message); }
-  };
+    }
 
-  // 10. INIT 1 PET ON LOAD
-  window.onload = () => $('addPetBtn').click();
+    const status = b.status;
+    const badge = document.getElementById('statusBadge');
+    document.querySelectorAll('.timeline-item').forEach(i=>i.classList.remove('active'));
+    
+    if(status==='pending'){badge.textContent='Waiting for Admin/Rider';badge.className='status-badge status-wait';document.getElementById('t1').classList.add('active');}
+    if(status==='assigned'){badge.textContent='Rider On The Way';badge.className='status-badge status-wait';document.getElementById('t1').classList.add('active');}
+    if(status==='pickedup'){badge.textContent='Pet Picked Up';badge.className='status-badge status-pickup';document.getElementById('t1').classList.add('active');document.getElementById('t2').classList.add('active'); alert('🐾 Pet has been picked up by '+b.riderName);}
+    if(status==='otw'){badge.textContent='On The Way to Vet';badge.className='status-badge status-otw';document.getElementById('t1').classList.add('active');document.getElementById('t2').classList.add('active');document.getElementById('t3').classList.add('active');}
+    if(status==='completed'){badge.textContent='Dropped Off ✓';badge.className='status-badge status-done';document.querySelectorAll('.timeline-item').forEach(i=>i.classList.add('active')); alert('✅ Pet safely dropped off!');}
+  });
+}
+
+function initMap(lat,lng){
+  map=L.map('map').setView([lat,lng],15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  riderMarker=L.marker([lat,lng]).addTo(map).bindPopup('Your Rider');
+}
+
+function showTrackScreen(){
+  document.getElementById('bookScreen').style.display='none';
+  document.getElementById('trackScreen').style.display='block';
+  document.getElementById('headerTitle').textContent='Tracking Your Pet';
+}
+
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+async function geocode(q){
+  try{
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);
+    const data = await res.json();
+    if(data.length>0) return {lat:parseFloat(data[0].lat), lng:parseFloat(data[0].lon)};
+  }catch(e){console.log(e)}
+  return null;
+}
 </script>
 </body>
 </html>
