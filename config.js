@@ -1,4 +1,4 @@
-// SafePaws 🐾 V3.2 CONFIG - COPY PASTE MO TO
+// SafePaws 🐾 V3.2 CONFIG
 export const CONFIG = {
   APP_NAME: "SafePaws 🐾",
   VEHICLE_TYPE: "CAR",
