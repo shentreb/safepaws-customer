@@ -2,28 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SafePaws 🐾 - Book Ride</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SafePaws 🐾</title>
+
+  <!-- PWA FILES -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#10B981">
+
+  <!-- MAPBOX + TAILWIND -->
   <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
   <link href='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css' rel='stylesheet' />
   <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
-    body { margin: 0; overflow: hidden; font-family: 'Inter', sans-serif; }
+    body { margin: 0; overflow: hidden; font-family: system-ui, sans-serif; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
     @keyframes bounce { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(0); } }
    .animate-bounce-slow { animation: bounce 2s infinite; }
-    #sheet {
-      position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
-      transition: height 0.2s ease-out; touch-action: none;
-    }
+    #sheet { position: absolute; bottom: 0; left: 0; right: 0; z-index: 10; transition: height 0.2s ease-out; touch-action: none; }
    .sheet-collapsed { height: 12%!important; }
-    #authModal { z-index: 20; } /* Nasa pinakataas */
+    #authModal { z-index: 20; backdrop-filter: blur(4px); }
   </style>
 </head>
 <body class="bg-gray-100">
 
-  <!-- 1. AUTH MODAL - FIREBASE -->
-  <div id="authModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center">
+  <!-- AUTH MODAL - FIREBASE -->
+  <div id="authModal" class="fixed inset-0 bg-black/60 flex items-center justify-center">
     <div class="bg-white p-8 rounded-2xl w-11/12 max-w-sm shadow-xl">
       <h2 class="text-2xl font-bold text-[#10B981] mb-4 text-center animate-bounce-slow">SafePaws 🐾</h2>
       <input id="email" type="email" placeholder="Email" class="w-full p-3 border rounded-lg mb-2">
@@ -35,10 +39,10 @@
     </div>
   </div>
 
-  <!-- 2. FULL SCREEN MAP -->
+  <!-- MAP -->
   <div id='map'></div>
 
-  <!-- 3. DRAGGABLE BOTTOM SHEET -->
+  <!-- DRAGGABLE BOTTOM SHEET -->
   <div id="sheet" class="bg-white rounded-t-3xl shadow-2xl sheet-collapsed hidden">
     <div id="handle" class="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 cursor-grab active:cursor-grabbing"></div>
     <div class="p-5 overflow-y-auto h-full">
@@ -73,11 +77,12 @@
 
   <script type="module">
     import { CONFIG } from './config.js';
-    // 1. FIREBASE SDK v10 - MODULAR
+
+    // 1. FIREBASE SDK
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // 2. FIREBASE CONFIG - PALITAN MO LANG TO NG IYO
+    // 2. PALITAN MO ITO NG IYO MULA SA FIREBASE CONSOLE
     const firebaseConfig = {
       apiKey: "AIzaSyBVaqhNCrgDlWGEVjXygszJUdQR_bpG7os",
       authDomain: "safepaws-batangas.firebaseapp.com",
@@ -89,8 +94,8 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // 3. MAPBOX SETUP
-    mapboxgl.accessToken = 'pk.eyJ1IjoiZGVtbyIsImEiOiJjbGZhcGkifQ'; // PALITAN MO TO
+    // 3. PALITAN MO ITO NG MAPBOX TOKEN MO
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZGVtbyIsImEiOiJjbGZhcGkifQ';
     const map = new mapboxgl.Map({ container: 'map', style: 'mapbox://styles/mapbox/streets-v12', center: [121.08, 13.79], zoom: 13 });
     let userLocation = [121.08, 13.79];
 
@@ -100,47 +105,39 @@
     const authError = document.getElementById('authError');
 
     onAuthStateChanged(auth, user => {
-      if (user) { authModal.classList.add('hidden'); sheet.classList.remove('hidden'); initMapFeatures(); }
+      if (user) { authModal.classList.add('hidden'); sheet.classList.remove('hidden'); initApp(); }
       else { authModal.classList.remove('hidden'); sheet.classList.add('hidden'); }
     });
     document.getElementById('signupBtn').onclick = () => authCall(createUserWithEmailAndPassword);
     document.getElementById('loginBtn').onclick = () => authCall(signInWithEmailAndPassword);
-    document.getElementById('forgotBtn').onclick = () => {
-      sendPasswordResetEmail(auth, document.getElementById('email').value)
-     .then(() => alert('Reset link sent to Gmail'))
-     .catch(err => authError.textContent = err.message);
-    };
+    document.getElementById('forgotBtn').onclick = () => sendPasswordResetEmail(auth, document.getElementById('email').value).then(() => alert('Reset link sent')).catch(err => authError.textContent = err.message);
     document.getElementById('logoutBtn').onclick = () => signOut(auth);
     function authCall(fn) {
-      const email = document.getElementById('email').value;
-      const pass = document.getElementById('password').value;
-      fn(auth, email, pass).catch(err => authError.textContent = err.message);
+      authError.textContent = '';
+      fn(auth, document.getElementById('email').value, document.getElementById('password').value).catch(err => authError.textContent = err.message);
     }
 
-    // 5. ALL APP LOGIC DITO LANG TATAKBO PAG LOGIN
-    function initMapFeatures() {
+    // 5. MAIN APP LOGIC
+    function initApp() {
       // GPS + NEARBY CLINICS
-      map.on('load', () => {
-        navigator.geolocation.getCurrentPosition(pos => {
-          userLocation = [pos.coords.longitude, pos.coords.latitude];
-          map.setCenter(userLocation);
-          new mapboxgl.Marker({ color: '#10B981' }).setLngLat(userLocation).addTo(map);
-          fetchNearbyClinics();
-        }, () => fetchNearbyClinics());
-      });
+      navigator.geolocation.getCurrentPosition(pos => {
+        userLocation = [pos.coords.longitude, pos.coords.latitude];
+        map.setCenter(userLocation);
+        new mapboxgl.Marker({ color: '#10B981' }).setLngLat(userLocation).addTo(map);
+        fetchNearbyClinics();
+      }, () => fetchNearbyClinics());
 
       async function fetchNearbyClinics() {
-        const types = 'veterinary_clinic,pet_grooming_service';
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${types}.json?proximity=${userLocation[0]},${userLocation[1]}&limit=10&access_token=${mapboxgl.accessToken}`;
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/veterinary_clinic,pet_grooming_service.json?proximity=${userLocation[0]},${userLocation[1]}&limit=10&access_token=${mapboxgl.accessToken}`;
         try {
           const res = await fetch(url);
           const data = await res.json();
           const clinicSelect = document.getElementById('clinicSelect');
-          clinicSelect.innerHTML = '';
-          data.features.length? data.features.forEach(p => {
+          clinicSelect.innerHTML = data.features.length? '' : '<option>No Vet/Groom found nearby</option>';
+          data.features.forEach(p => {
             const km = ((p.properties.distance || 0) / 1000).toFixed(1);
             clinicSelect.innerHTML += `<option value="${p.text}|${p.place_name}">${p.text} - ${km}km</option>`;
-          }) : clinicSelect.innerHTML = '<option>No Vet/Groom found nearby</option>';
+          });
         } catch { document.getElementById('clinicSelect').innerHTML = '<option>Error loading</option>'; }
       }
 
